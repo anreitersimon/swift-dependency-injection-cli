@@ -100,7 +100,7 @@ public struct Parameter: Codable {
     }
 
     public var isAssisted: Bool {
-        attributes.contains("Assisted") || attributes.contains("SwiftDagger.Assisted")
+        attributes.contains("Assisted") || attributes.contains("DependencyInjection.Assisted")
     }
 }
 

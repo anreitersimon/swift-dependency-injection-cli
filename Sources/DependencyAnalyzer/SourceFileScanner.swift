@@ -151,7 +151,7 @@ extension TypeInheritanceClauseSyntax {
             let typeName = $0.typeName.withoutTrivia().description
 
             return [
-                "Injectable", "SwiftDagger.Injectable",
+                "Injectable", "DependencyInjection.Injectable",
             ].contains(typeName)
         }
     }
