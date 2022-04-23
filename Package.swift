@@ -22,6 +22,15 @@ let package = Package(
         ),
     ],
     targets: [
+        .plugin(
+            name: "DistributionArchiveCreator",
+            capability: .command(
+                intent: .custom(
+                    verb: "create-distribution-archive",
+                    description: "Creates a .zip containing release builds of products"
+                )
+            )
+        ),
         .binaryTarget(
             name: "lib_InternalSwiftSyntaxParser",
             url:

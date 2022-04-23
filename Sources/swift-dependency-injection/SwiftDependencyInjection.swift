@@ -1,9 +1,9 @@
 import ArgumentParser
+import DependencyInjectionKit
 import DependencyModel
 import Foundation
-import DependencyInjectionKit
 
-@main struct SwiftDagger: ParsableCommand {
+@main struct SwiftDependencyInjection: ParsableCommand {
     static let configuration = CommandConfiguration(subcommands: [
         Extract.self,
         Merge.self,
