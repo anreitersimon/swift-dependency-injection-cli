@@ -2,7 +2,25 @@ import DependencyModel
 import Foundation
 @_implementationOnly import SwiftSyntax
 
-protocol Scope {
+protocol Scope {}
+
+protocol ModifierProtocol: RawRepresentable where RawValue == String {}
+
+extension Sequence where Element: ModifierProtocol {
+    var accessLevel: SourceCode.AccessLevel {
+        return
+            self
+            .compactMap { SourceCode.AccessLevel(rawValue: $0.rawValue) }
+            .first ?? .internal
+    }
+}
+
+extension Array where Element: ModifierProtocol {
+    static func fromModifiers(_ modifiers: ModifierListSyntax?) -> Self {
+        modifiers?.compactMap {
+            Element(rawValue: $0.name.trimmed)
+        } ?? []
+    }
 }
 
 extension SyntaxProtocol {
@@ -24,7 +42,7 @@ protocol MemberDeclarationScope: TypeDeclarationScope {
 }
 
 class SourceCode: TypeDeclarationScope {
-    
+
     var imports: [Import] = []
     var types: [TypeDeclaration] = []
     var extensions: [Extension] = []
@@ -42,24 +60,26 @@ class SourceCode: TypeDeclarationScope {
         case `fileprivate`
         case `internal`
         case `open`
-
-        static func fromModifiers(_ modifiers: ModifierListSyntax?) -> AccessLevel {
-
-            return
-                modifiers?.compactMap {
-                    AccessLevel(rawValue: $0.withoutTrivia().description)
-                }
-                .first ?? .internal
-        }
     }
 
     class TypeDeclaration: MemberDeclarationScope {
+
+        enum Modifier: String, ModifierProtocol {
+            case `public`
+            case `private`
+            case `fileprivate`
+            case `internal`
+            case `open`
+            case `dynamic`
+            case `final`
+            case `indirect`
+        }
 
         init(
             module: String,
             name: String,
             kind: SourceCode.TypeDeclaration.Kind,
-            accessLevel: SourceCode.AccessLevel,
+            modifiers: [Modifier],
             initializers: [SourceCode.Initializer] = [],
             properties: [SourceCode.Variable] = [],
             functions: [SourceCode.Function] = [],
@@ -68,7 +88,7 @@ class SourceCode: TypeDeclarationScope {
             self.module = module
             self.name = name
             self.kind = kind
-            self.accessLevel = accessLevel
+            self.modifiers = modifiers
             self.initializers = initializers
             self.properties = properties
             self.functions = functions
@@ -85,7 +105,7 @@ class SourceCode: TypeDeclarationScope {
         let module: String
         let name: String
         let kind: Kind
-        let accessLevel: AccessLevel
+        let modifiers: [Modifier]
 
         var initializers: [Initializer] = []
         var properties: [Variable] = []
@@ -100,7 +120,7 @@ class SourceCode: TypeDeclarationScope {
         var properties: [Variable] = []
         var functions: [Function] = []
         var types: [TypeDeclaration] = []
-        
+
         init(
             extendedType: String,
             initializers: [SourceCode.Initializer] = [],
@@ -118,10 +138,22 @@ class SourceCode: TypeDeclarationScope {
     }
 
     struct Variable {
-        enum Modifier {
-            
+        enum Modifier: String, ModifierProtocol {
+            case `public`
+            case `private`
+            case `fileprivate`
+            case `internal`
+            case `open`
+
+            case `static`
+            case `class`
+
+            case `weak`
+            case `unowned`
+
+            case `mutating`
         }
-        
+
         let name: String
         let type: VariableType?
         let attributes: [String]?
@@ -135,13 +167,30 @@ class SourceCode: TypeDeclarationScope {
     }
 
     struct Function {
-        enum Modifier: String, CaseIterable {
+        enum Modifier: String {
+            case `public`
+            case `private`
+            case `fileprivate`
+            case `internal`
+            case `open`
+
+            case `static`
+            case `class`
+
+            case `weak`
+            case `unowned`
+
+            case `mutating`
+        }
+
+        enum TrailingModifier: String, CaseIterable {
             case `throws`, `rethrows`, `async`
         }
 
         let accessLevel: AccessLevel
         let arguments: [Argument]
-        let modifiers: Set<Function.Modifier>
+        let modifiers: [Modifier]
+        let trailingModifiers: [TrailingModifier]
 
         struct Argument {
             let firstName: String?
@@ -152,9 +201,22 @@ class SourceCode: TypeDeclarationScope {
     }
 
     struct Initializer {
-        var accessLevel: AccessLevel
-        var arguments: [Function.Argument]
-        var modifiers: Set<Function.Modifier>
+        enum Modifier: String, ModifierProtocol {
+            case `public`
+            case `private`
+            case `fileprivate`
+            case `internal`
+            case `open`
+        }
+
+        var accessLevel: AccessLevel {
+            modifiers.accessLevel
+        }
+
+        let modifiers: [Modifier]
+        let trailingModifiers: Set<Function.TrailingModifier>
+
+        var arguments: [Function.Argument] = []
     }
 }
 
@@ -214,9 +276,8 @@ class SourceFileScanner: SyntaxVisitor {
     ) -> SyntaxVisitorContinueKind {
 
         var initializer = SourceCode.Initializer(
-            accessLevel: .fromModifiers(node.modifiers),
-            arguments: [],
-            modifiers: []
+            modifiers: .fromModifiers(node.modifiers),
+            trailingModifiers: []
         )
 
         for parameter in node.parameters.parameterList {
@@ -243,9 +304,9 @@ class SourceFileScanner: SyntaxVisitor {
 
         let typeDecl = SourceCode.TypeDeclaration(
             module: context.moduleName,
-            name: node.identifier.withoutTrivia().text,
+            name: node.identifier.trimmed,
             kind: .class,
-            accessLevel: .fromModifiers(node.modifiers)
+            modifiers: .fromModifiers(node.modifiers)
         )
 
         scopes.append(typeDecl)
@@ -263,9 +324,9 @@ class SourceFileScanner: SyntaxVisitor {
 
         let typeDecl = SourceCode.TypeDeclaration(
             module: context.moduleName,
-            name: node.identifier.withoutTrivia().text,
+            name: node.identifier.trimmed,
             kind: .struct,
-            accessLevel: .fromModifiers(node.modifiers)
+            modifiers: .fromModifiers(node.modifiers)
         )
 
         scopes.append(typeDecl)
@@ -283,9 +344,9 @@ class SourceFileScanner: SyntaxVisitor {
 
         let typeDecl = SourceCode.TypeDeclaration(
             module: context.moduleName,
-            name: node.identifier.withoutTrivia().text,
+            name: node.identifier.trimmed,
             kind: .struct,
-            accessLevel: .fromModifiers(node.modifiers)
+            modifiers: .fromModifiers(node.modifiers)
         )
 
         scopes.append(typeDecl)
@@ -351,6 +412,7 @@ class SourceFileScanner: SyntaxVisitor {
                 name: name,
                 type: variableType,
                 attributes: [],
+                modifiers: .fromModifiers(node.modifiers),
                 isStored: isStored
             )
         )
