@@ -23,10 +23,10 @@ let package = Package(
     ],
     targets: [
         .plugin(
-            name: "DistributionArchiveCreator",
+            name: "CreateArtifactBundle",
             capability: .command(
                 intent: .custom(
-                    verb: "create-distribution-archive",
+                    verb: "create-artifact-bundle",
                     description: "Creates a .zip containing release builds of products"
                 )
             )
