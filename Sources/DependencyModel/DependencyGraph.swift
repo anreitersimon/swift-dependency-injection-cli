@@ -78,6 +78,24 @@ public struct Initializer: Codable {
 
 }
 
+public enum Constants {
+    public static let runtimeLibraryName = "DependencyInjection"
+
+    public static let assistedAnnotations: Set<String> = [
+        "Assisted",
+        "\(runtimeLibraryName).Assisted",
+    ]
+
+    public static let injectAnnotations: Set<String> = [
+        "Inject",
+        "\(runtimeLibraryName).Inject",
+    ]
+
+    public static let allAnnotations =
+        assistedAnnotations
+        .union(injectAnnotations)
+}
+
 public struct Parameter: Codable {
     public let type: TypeDescriptor
     public let firstName: String
@@ -99,8 +117,16 @@ public struct Parameter: Codable {
         self.range = range
     }
 
+    public var isCustomAnnotation: Bool {
+        !Constants.allAnnotations.isDisjoint(with: attributes)
+    }
+
     public var isAssisted: Bool {
-        attributes.contains("Assisted") || attributes.contains("DependencyInjection.Assisted")
+        !Constants.assistedAnnotations.isDisjoint(with: attributes)
+    }
+
+    public var isInjected: Bool {
+        !Constants.injectAnnotations.isDisjoint(with: attributes)
     }
 }
 

@@ -3,8 +3,10 @@ import DependencyModel
 
 struct Context {
     let moduleName: String
+    let syntax: SourceFileSyntax
     let converter: SourceLocationConverter
 }
+
 extension DependencyModel.SourceLocation {
     fileprivate init(swiftSyntaxLocation location: SwiftSyntax.SourceLocation) {
         self.init(
@@ -24,7 +26,7 @@ extension SyntaxProtocol {
             end: .init(swiftSyntaxLocation: range.end)
         )
     }
-    
+
     func startLocation(context: Context) -> DependencyModel.SourceLocation {
         return .init(swiftSyntaxLocation: startLocation(converter: context.converter))
     }

@@ -9,7 +9,11 @@ let package = Package(
         .executable(
             name: "swift-dependency-injection",
             targets: ["swift-dependency-injection"]
-        )
+        ),
+        .library(
+            name: "DependencyAnalyzer",
+            targets: ["DependencyAnalyzer"]
+        ),
     ],
     dependencies: [
         .package(
@@ -18,7 +22,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/apple/swift-syntax.git",
-            revision: "0.50500.0"
+            branch: "0.50600.1"
         ),
         .package(
             url: "https://github.com/apple/swift-argument-parser",
@@ -26,16 +30,9 @@ let package = Package(
         ),
     ],
     targets: [
-        .binaryTarget(
-            name: "lib_InternalSwiftSyntaxParser",
-            url:
-                "https://github.com/keith/StaticInternalSwiftSyntaxParser/releases/download/5.5.2/lib_InternalSwiftSyntaxParser.xcframework.zip",
-            checksum: "96bbc9ab4679953eac9ee46778b498cb559b8a7d9ecc658e54d6679acfbb34b8"
-        ),
         .executableTarget(
             name: "swift-dependency-injection",
             dependencies: [
-                "lib_InternalSwiftSyntaxParser",
                 "DependencyInjectionKit",
                 .product(
                     name: "ArgumentParser",
@@ -47,10 +44,8 @@ let package = Package(
         .target(
             name: "DependencyAnalyzer",
             dependencies: [
-                .product(
-                    name: "SwiftSyntax",
-                    package: "swift-syntax"
-                ),
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxParser", package: "swift-syntax"),
                 "DependencyModel",
             ]
         ),
@@ -66,6 +61,17 @@ let package = Package(
                 "DependencyAnalyzer",
                 "DependencyModel",
                 "CodeGeneration",
+            ]
+        ),
+        .testTarget(
+            name: "DependencyAnalyzerTests",
+            dependencies: [
+                "DependencyAnalyzer",
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxParser", package: "swift-syntax"),
+            ],
+            exclude: [
+                "Fixtures"
             ]
         ),
     ]
