@@ -13,6 +13,10 @@ let package = Package(
     ],
     dependencies: [
         .package(
+            url: "https://github.com/anreitersimon/swift-package-utils",
+            branch: "main"
+        ),
+        .package(
             url: "https://github.com/apple/swift-syntax.git",
             revision: "0.50500.0"
         ),
@@ -22,15 +26,6 @@ let package = Package(
         ),
     ],
     targets: [
-        .plugin(
-            name: "CreateArtifactBundle",
-            capability: .command(
-                intent: .custom(
-                    verb: "create-artifact-bundle",
-                    description: "Creates a .zip containing release builds of products"
-                )
-            )
-        ),
         .binaryTarget(
             name: "lib_InternalSwiftSyntaxParser",
             url:

@@ -10,6 +10,15 @@
       }
     },
     {
+      "identity" : "swift-package-utils",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/anreitersimon/swift-package-utils",
+      "state" : {
+        "branch" : "main",
+        "revision" : "550e7ad52b2cdff98edc83a238c143c47c6a927b"
+      }
+    },
+    {
       "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-syntax.git",
