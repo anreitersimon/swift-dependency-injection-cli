@@ -28,6 +28,10 @@ let package = Package(
             url: "https://github.com/apple/swift-argument-parser",
             from: "1.0.0"
         ),
+        .package(
+            url: "https://github.com/pointfreeco/swift-custom-dump",
+            from: "0.3.0"
+        ),
     ],
     targets: [
         .executableTarget(
@@ -40,13 +44,23 @@ let package = Package(
                 ),
             ]
         ),
-        .target(name: "DependencyModel"),
         .target(
-            name: "DependencyAnalyzer",
+            name: "SourceModel",
             dependencies: [
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxParser", package: "swift-syntax"),
-                "DependencyModel",
+            ]
+        ),
+        .target(
+            name: "DependencyModel",
+            dependencies: [
+                "SourceModel"
+            ]
+        ),
+        .target(
+            name: "DependencyAnalyzer",
+            dependencies: [
+                "DependencyModel"
             ]
         ),
         .target(
@@ -64,11 +78,13 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "DependencyAnalyzerTests",
+            name: "SourceModelTests",
             dependencies: [
-                "DependencyAnalyzer",
-                .product(name: "SwiftSyntax", package: "swift-syntax"),
-                .product(name: "SwiftSyntaxParser", package: "swift-syntax"),
+                "SourceModel",
+                .product(
+                    name: "CustomDump",
+                    package: "swift-custom-dump"
+                ),
             ],
             exclude: [
                 "Fixtures"
