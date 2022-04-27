@@ -90,5 +90,15 @@ let package = Package(
                 "Fixtures"
             ]
         ),
+        .testTarget(
+            name: "CodeGenerationTests",
+            dependencies: [
+                "CodeGeneration",
+                .product(
+                    name: "CustomDump",
+                    package: "swift-custom-dump"
+                ),
+            ]
+        ),
     ]
 )

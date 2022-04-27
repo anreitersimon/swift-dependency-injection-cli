@@ -2,6 +2,7 @@
 
 struct Context {
     let moduleName: String
+    let fileName: String
     let syntax: SourceFileSyntax
     let converter: SourceLocationConverter
 }

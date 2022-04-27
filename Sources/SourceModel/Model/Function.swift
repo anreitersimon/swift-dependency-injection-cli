@@ -1,5 +1,6 @@
 public struct Function: Equatable, Codable {
-    public enum Modifier: String, Codable {
+
+    public enum Modifier: String, Codable, ModifierProtocol {
         case `public`
         case `private`
         case `fileprivate`
@@ -15,20 +16,20 @@ public struct Function: Equatable, Codable {
         case `mutating`
     }
 
-    public enum TrailingModifier: String, Codable {
+    public enum TrailingModifier: String, Codable, ModifierProtocol {
         case `throws`, `rethrows`, `async`
     }
 
-    public let accessLevel: AccessLevel
+    public var accessLevel: AccessLevel { modifiers.accessLevel }
     public let arguments: [Argument]
     public let modifiers: [Modifier]
     public let trailingModifiers: [TrailingModifier]
 
     public struct Argument: Equatable, Codable {
-        let firstName: String?
-        let secondName: String?
-        let type: String?
-        let attributes: [String]
-        let defaultValue: String?
+        var firstName: String?
+        var secondName: String?
+        var type: TypeSignature?
+        var attributes: [String] = []
+        var defaultValue: String? = nil
     }
 }

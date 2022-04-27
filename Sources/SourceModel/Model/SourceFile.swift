@@ -5,6 +5,7 @@ import Foundation
 public struct SourceFile: Equatable, Codable, DeclarationScope {
     var path: String { module }
 
+    public let fileName: String
     public let module: String
     public var imports: [Import] = []
     public var types: [TypeDeclaration] = []
@@ -12,6 +13,28 @@ public struct SourceFile: Equatable, Codable, DeclarationScope {
     public var variables: [Variable] = []
     public var functions: [Function] = []
     public var initializers: [Initializer] = []
+
+    public var recursiveTypes: [TypeDeclaration] {
+        var builder: [TypeDeclaration] = []
+
+        collectTypes(into: &builder)
+
+        return builder
+    }
+
+}
+
+extension DeclarationScope {
+
+    func collectTypes(
+        into collection: inout [TypeDeclaration]
+    ) {
+        for type in types {
+            collection.append(type)
+            type.collectTypes(into: &collection)
+        }
+    }
+
 }
 
 extension SourceFile {
@@ -23,6 +46,7 @@ extension SourceFile {
         let syntax = try SyntaxParser.parse(file)
         let context = Context(
             moduleName: module,
+            fileName: file.deletingPathExtension().lastPathComponent,
             syntax: syntax,
             converter: SourceLocationConverter(
                 file: file.absoluteString,
@@ -44,6 +68,7 @@ extension SourceFile {
         let syntax = try SyntaxParser.parse(source: source)
         let context = Context(
             moduleName: module,
+            fileName: fileName,
             syntax: syntax,
             converter: SourceLocationConverter(
                 file: fileName,

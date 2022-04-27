@@ -11,8 +11,9 @@ public struct Initializer: Equatable, Codable {
         modifiers.accessLevel
     }
 
-    public let modifiers: [Modifier]
-    public let trailingModifiers: [Function.TrailingModifier]
+    public var modifiers: [Modifier] = []
+    public var trailingModifiers: [Function.TrailingModifier] = []
+    public var generics: Generics = .empty
 
     public var arguments: [Function.Argument] = []
 }

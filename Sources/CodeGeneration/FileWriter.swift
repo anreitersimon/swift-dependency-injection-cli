@@ -20,7 +20,10 @@ public class FileWriter {
         currentIndent = originalIndent
     }
 
-    func scope(performIndented: (FileWriter) -> Void) {
+    func scope(_ prefix: String? = nil, performIndented: (FileWriter) -> Void) {
+        if let prefix = prefix {
+            self.write(prefix)
+        }
         self.write(" {")
         self.endLine()
         self.indent(performIndented: performIndented)
@@ -52,6 +55,16 @@ public class FileWriter {
         builder.append(str)
         self.isAtBeginning = false
 
+        return self
+    }
+    
+    @discardableResult
+    func writeMultiline(_ str: String) -> FileWriter {
+        let lines = str.split(whereSeparator: \.isNewline)
+        
+        for line in lines {
+            writeLine(String(line))
+        }
         return self
     }
 

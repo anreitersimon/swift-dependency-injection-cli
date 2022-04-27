@@ -110,7 +110,17 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      codeCoverageEnabled = "YES">
+      <CodeCoverageTargets>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "DependencyAnalyzer"
+            BuildableName = "DependencyAnalyzer"
+            BlueprintName = "DependencyAnalyzer"
+            ReferencedContainer = "container:">
+         </BuildableReference>
+      </CodeCoverageTargets>
       <Testables>
          <TestableReference
             skipped = "NO">
@@ -119,6 +129,16 @@
                BlueprintIdentifier = "SourceModelTests"
                BuildableName = "SourceModelTests"
                BlueprintName = "SourceModelTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "CodeGenerationTests"
+               BuildableName = "CodeGenerationTests"
+               BlueprintName = "CodeGenerationTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

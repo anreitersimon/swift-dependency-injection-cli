@@ -1,7 +1,58 @@
 import DependencyModel
 import Foundation
+import SourceModel
+
+extension String {
+
+    /// Returns a form of the string that is a valid bundle identifier
+    public func swiftIdentifier() -> String {
+        return self.filter { $0.isNumber || $0.isLetter }
+    }
+}
 
 public enum CodeGen {
+
+    public static func generateFactories(
+        source: SourceFile
+    ) -> String {
+
+        let writer = FileWriter()
+
+        writer.writeLine("// Automatically generated DO NOT MODIFY")
+        writer.endLine()
+
+        for imp in source.imports {
+            writer.writeLine(imp.description)
+        }
+
+        writer.endLine()
+
+        writer.scope("extension \(source.module)_Module") {
+            $0.scope(
+                "func register_\(source.fileName.swiftIdentifier())(_ registry: DependencyRegistry)"
+            ) {
+                $0.writeLine("// register all types in this file")
+            }
+        }
+
+        writer.endLine()
+
+        for type in source.recursiveTypes {
+            if type.accessLevel < .fileprivate {
+
+            }
+
+            writer.scope("extension \(type.fullyQualifiedName)") {
+                $0.writeLine(
+                    """
+                    \(type.accessLevel.rawValue) static func register(
+                    """
+                )
+            }
+        }
+
+        return writer.builder
+    }
 
     @TextBuilder
     public static func generatedFactories(

@@ -10,13 +10,13 @@ public struct Extension: Equatable, Codable, DeclarationScope {
     init(
         extendedType: String,
         initializers: [Initializer] = [],
-        properties: [Variable] = [],
+        variables: [Variable] = [],
         functions: [Function] = [],
         types: [TypeDeclaration] = []
     ) {
         self.extendedType = extendedType
         self.initializers = initializers
-        self.variables = properties
+        self.variables = variables
         self.functions = functions
         self.types = types
     }

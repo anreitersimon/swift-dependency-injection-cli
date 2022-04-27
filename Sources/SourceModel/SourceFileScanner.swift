@@ -21,7 +21,12 @@ class SourceFileScanner: SyntaxVisitor {
 
     init(context: Context) {
         self.context = context
-        self.scopes = [SourceFile(module: context.moduleName)]
+        self.scopes = [
+            SourceFile(
+                fileName: context.fileName,
+                module: context.moduleName
+            )
+        ]
     }
 
     override func visitPost(_ node: ImportDeclSyntax) {
@@ -48,7 +53,11 @@ class SourceFileScanner: SyntaxVisitor {
 
         var initializer = Initializer(
             modifiers: .fromModifiers(node.modifiers),
-            trailingModifiers: []
+            trailingModifiers: [],
+            generics: Generics.from(
+                parameterClause: node.genericParameterClause,
+                whereClause: node.genericWhereClause
+            )
         )
 
         for parameter in node.parameters.parameterList {
@@ -56,7 +65,7 @@ class SourceFileScanner: SyntaxVisitor {
                 Function.Argument(
                     firstName: parameter.firstName?.text,
                     secondName: parameter.secondName?.text,
-                    type: parameter.type?.trimmed,
+                    type: parameter.type.map(TypeSignature.fromTypeSyntax),
                     attributes: parameter.attributes?.map { $0.trimmed } ?? [],
                     defaultValue: parameter.defaultArgument?.value.trimmed
                 )
@@ -71,10 +80,18 @@ class SourceFileScanner: SyntaxVisitor {
     override func visit(_ node: ClassDeclSyntax) -> SyntaxVisitorContinueKind {
 
         let typeDecl = TypeDeclaration(
+            kind: .class,
             module: context.moduleName,
             name: node.identifier.trimmed,
-            kind: .class,
-            modifiers: .fromModifiers(node.modifiers)
+            scope: path,
+            modifiers: .fromModifiers(node.modifiers),
+            generics: Generics.from(
+                parameterClause: node.genericParameterClause,
+                whereClause: node.genericWhereClause
+            ),
+            inheritedTypes: node.inheritanceClause?.inheritedTypeCollection
+                .map(\.typeName)
+                .map(TypeSignature.fromTypeSyntax(_:)) ?? []
         )
 
         scopes.append(typeDecl)
@@ -90,10 +107,18 @@ class SourceFileScanner: SyntaxVisitor {
     override func visit(_ node: StructDeclSyntax) -> SyntaxVisitorContinueKind {
 
         let typeDecl = TypeDeclaration(
+            kind: .struct,
             module: context.moduleName,
             name: node.identifier.trimmed,
-            kind: .struct,
-            modifiers: .fromModifiers(node.modifiers)
+            scope: path,
+            modifiers: .fromModifiers(node.modifiers),
+            generics: Generics.from(
+                parameterClause: node.genericParameterClause,
+                whereClause: node.genericWhereClause
+            ),
+            inheritedTypes: node.inheritanceClause?.inheritedTypeCollection
+                .map(\.typeName)
+                .map(TypeSignature.fromTypeSyntax(_:)) ?? []
         )
 
         scopes.append(typeDecl)
@@ -109,10 +134,18 @@ class SourceFileScanner: SyntaxVisitor {
     override func visit(_ node: EnumDeclSyntax) -> SyntaxVisitorContinueKind {
 
         let typeDecl = TypeDeclaration(
+            kind: .enum,
             module: context.moduleName,
             name: node.identifier.trimmed,
-            kind: .struct,
-            modifiers: .fromModifiers(node.modifiers)
+            scope: path,
+            modifiers: .fromModifiers(node.modifiers),
+            generics: Generics.from(
+                parameterClause: node.genericParameters,
+                whereClause: node.genericWhereClause
+            ),
+            inheritedTypes: node.inheritanceClause?.inheritedTypeCollection
+                .map(\.typeName)
+                .map(TypeSignature.fromTypeSyntax(_:)) ?? []
         )
 
         scopes.append(typeDecl)
@@ -152,7 +185,7 @@ class SourceFileScanner: SyntaxVisitor {
         let name = binding.pattern.withoutTrivia().description
         let isStored = binding.accessor == nil
 
-        let variableType: Variable.VariableType?
+        let variableType: TypeSignature?
 
         if let type = binding.typeAnnotation?.type {
             variableType = .fromTypeSyntax(type)
@@ -164,8 +197,11 @@ class SourceFileScanner: SyntaxVisitor {
             Variable(
                 name: name,
                 type: variableType,
-                attributes: [],
+                attributes: node.attributes?.map {
+                    $0.trimmed
+                } ?? [],
                 modifiers: .fromModifiers(node.modifiers),
+                defaultValue: binding.initializer?.value.trimmed,
                 isStored: isStored
             )
         )
