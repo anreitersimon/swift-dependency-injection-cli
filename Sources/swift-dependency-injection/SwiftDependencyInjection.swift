@@ -46,7 +46,7 @@ struct Merge: ParsableCommand {
     var outputFile: String
 
     mutating func run() throws {
-        var graph = DependencyGraph()
+        var graph = ModuleDependencyGraph(module: moduleName)
         let decoder = JSONDecoder()
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
@@ -56,9 +56,9 @@ struct Merge: ParsableCommand {
             print("w: Merging \(path)")
 
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let decoded = try decoder.decode(DependencyGraph.self, from: data)
+            let decoded = try decoder.decode(FileDependencyGraph.self, from: data)
 
-            graph.merge(decoded)
+            graph.files.append(decoded)
         }
 
         try Generator.generateModule(

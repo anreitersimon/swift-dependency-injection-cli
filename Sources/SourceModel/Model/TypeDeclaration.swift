@@ -1,4 +1,4 @@
-import SwiftSyntax
+@_implementationOnly import SwiftSyntax
 
 public struct TypeDeclaration: Codable, Equatable, DeclarationScope {
     public let kind: Kind
@@ -6,13 +6,33 @@ public struct TypeDeclaration: Codable, Equatable, DeclarationScope {
     public let name: String
     public let scope: String
     public let modifiers: [Modifier]
-    public var generics: Generics = Generics(parameters: [], requirements: [])
+    public var generics: Generics = .empty
     public var inheritedTypes: [TypeSignature] = []
 
     public var initializers: [Initializer] = []
     public var variables: [Variable] = []
     public var functions: [Function] = []
     public var types: [TypeDeclaration] = []
+
+    public var implicitMemberwiseInitializer: Initializer? {
+        guard self.kind == .struct && self.initializers.isEmpty else {
+            return nil
+        }
+
+        let storedVariables = self.variables.filter(\.isStored)
+
+        return Initializer(
+            arguments: storedVariables.map {
+                Function.Argument(
+                    firstName: $0.name,
+                    secondName: nil,
+                    type: $0.type,
+                    attributes: $0.attributes,
+                    defaultValue: $0.defaultValue
+                )
+            }
+        )
+    }
 
     public enum Kind: String, Codable {
         case `struct`
@@ -41,7 +61,11 @@ public struct TypeDeclaration: Codable, Equatable, DeclarationScope {
 public struct Generics: Equatable, Codable {
     public let parameters: [Parameter]
     public let requirements: [Requirement]
-    
+
+    public var isEmpty: Bool {
+        return parameters.isEmpty && requirements.isEmpty
+    }
+
     public static let empty = Generics(parameters: [], requirements: [])
 
     public struct Requirement: Equatable, Codable {

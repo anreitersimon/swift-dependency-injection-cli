@@ -3,7 +3,7 @@
 public indirect enum TypeSignature: Equatable, Codable {
 
     /// * `Type`
-    case simple(name: String, genericArguments: [TypeSignature]? = nil)
+    case simple(name: String, genericArguments: [TypeSignature] = [])
 
     /// * `(Type1, Type2, ...)`
     /// * `(a: Type1, b: Type1, ...)`
@@ -33,9 +33,51 @@ public indirect enum TypeSignature: Equatable, Codable {
     case composition(raw: String)
     case memberType(raw: String)
 
+    var description: String {
+        switch self {
+        case .simple(let name, let genericArguments):
+            if !genericArguments.isEmpty {
+                let args = genericArguments.map { $0.description }.joined(separator: ", ")
+
+                return "\(name)<\(args)>"
+            } else {
+                return name
+            }
+        case .tuple(let raw):
+            return raw
+        case .function(let raw):
+            return raw
+        case .metatype(let typeSignature):
+            return "\(typeSignature.description).self"
+        case .dictionary(let key, let value):
+            return "[\(key.description): \(value.description)]"
+        case .array(let typeSignature):
+            return "[\(typeSignature.description)]"
+        case .optional(let typeSignature):
+            return "\(typeSignature.description)?"
+        case .implicitlyUnwrappedOptional(let typeSignature):
+            return "\(typeSignature.description)!"
+        case .attributed(let typeSignature):
+            fatalError()
+        case .unknown(let type, let value):
+            fatalError()
+        case .composition(let raw):
+            fatalError()
+        case .memberType(let raw):
+            fatalError()
+        }
+    }
+
+    public func asMetatype() -> String? {
+        switch self {
+        case .metatype: return nil
+        default: return "\(description).self"
+        }
+    }
+
     func inferLiteralTypes() -> Self {
         switch self {
-        case .simple(let name, let genericArguments?):
+        case .simple(let name, let genericArguments) where !genericArguments.isEmpty:
             switch name {
             case "Optional", "Swift.Optional":
                 if genericArguments.count == 1 {
@@ -80,7 +122,7 @@ public indirect enum TypeSignature: Equatable, Codable {
                 genericArguments: underlying.genericArgumentClause?.arguments
                     .map { arg in
                         .fromTypeSyntax(arg.argumentType)
-                    }
+                    } ?? []
             )
 
         case let underlying as MemberTypeIdentifierSyntax:

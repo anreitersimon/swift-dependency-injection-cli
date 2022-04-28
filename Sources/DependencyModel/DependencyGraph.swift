@@ -1,133 +1,69 @@
 import Foundation
 import SourceModel
 
-public struct DependencyGraph: Codable {
-    public var imports: Set<String> = []
-    public var provides: [ProvidedDependency] = []
+public struct FileDependencyGraph: Codable {
+    public let fileName: String
+    public let module: String
+    public var imports: [Import] = []
+    public var provides: [InjectableType] = []
     public var uses: [Injection] = []
 
-    public init() {}
+    public mutating func register(_ type: TypeDeclaration, initializer: Initializer) {
+        self.provides.append(
+            InjectableType(
+                name: type.name,
+                fullName: type.fullyQualifiedName,
+                initializer: initializer
+            )
+        )
 
-    public mutating func merge(_ other: DependencyGraph) {
-        self.imports.formUnion(other.imports)
-        self.provides.append(contentsOf: other.provides)
-        self.uses.append(contentsOf: other.uses)
+        uses.append(Injection(arguments: initializer.arguments))
+
     }
-
-    public func write(to url: URL) throws {
-        let encoder = JSONEncoder()
-        if #available(macOS 10.13, *) {
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        } else {
-            encoder.outputFormatting = [.prettyPrinted]
-        }
-
-        try encoder.encode(self).write(to: url, options: .atomic)
-    }
-}
-
-public struct Initializer: Codable {
-    public let arguments: [Parameter]
-    public let range: SourceRange
-
-    public init(arguments: [Parameter], range: SourceRange) {
-        self.arguments = arguments
-        self.range = range
-    }
-
-}
-
-public enum Constants {
-    public static let runtimeLibraryName = "DependencyInjection"
-
-    public static let assistedAnnotations: Set<String> = [
-        "Assisted",
-        "\(runtimeLibraryName).Assisted",
-    ]
-
-    public static let injectAnnotations: Set<String> = [
-        "Inject",
-        "\(runtimeLibraryName).Inject",
-    ]
-
-    public static let allAnnotations =
-        assistedAnnotations
-        .union(injectAnnotations)
-}
-
-public struct Parameter: Codable {
-    public let type: TypeDescriptor
-    public let firstName: String
-    public let secondName: String?
-    public let attributes: [String]
-    public let range: SourceRange
 
     public init(
-        type: TypeDescriptor,
-        firstName: String,
-        secondName: String?,
-        attributes: [String],
-        range: SourceRange
+        fileName: String,
+        module: String,
+        imports: [Import] = [],
+        provides: [InjectableType] = [],
+        uses: [Injection] = []
     ) {
-        self.type = type
-        self.firstName = firstName
-        self.secondName = secondName
-        self.attributes = attributes
-        self.range = range
+        self.fileName = fileName
+        self.module = module
+        self.imports = imports
+        self.provides = provides
+        self.uses = uses
     }
 
-    public var isCustomAnnotation: Bool {
-        !Constants.allAnnotations.isDisjoint(with: attributes)
+}
+
+public struct ModuleDependencyGraph: Codable {
+
+    public let module: String
+    public var files: [FileDependencyGraph]
+
+    public init(
+        module: String,
+        files: [FileDependencyGraph] = []
+    ) {
+        self.module = module
+        self.files = files
     }
 
-    public var isAssisted: Bool {
-        !Constants.assistedAnnotations.isDisjoint(with: attributes)
-    }
+}
 
-    public var isInjected: Bool {
-        !Constants.injectAnnotations.isDisjoint(with: attributes)
-    }
+public struct TopLevelDependencyGraph: Codable {}
+
+public struct InjectableType: Codable {
+    public let name: String
+    public let fullName: String
+    public let initializer: Initializer
 }
 
 public struct Injection: Codable {
-    public let range: SourceRange
-    public let arguments: [Parameter]
+    public let arguments: [Function.Argument]
 
-    public init(range: SourceRange, arguments: [Parameter]) {
-        self.range = range
+    public init(arguments: [Function.Argument]) {
         self.arguments = arguments
-    }
-}
-
-public struct TypeDescriptor: Codable {
-    public let name: String
-
-    public init(name: String) {
-        self.name = name
-    }
-}
-
-public struct ProvidedDependency: Codable {
-    public let location: SourceLocation
-    public let type: TypeDescriptor
-    public let arguments: [Parameter]
-    public let kind: Kind
-
-    public init(
-        location: SourceLocation,
-        type: TypeDescriptor,
-        kind: ProvidedDependency.Kind,
-        arguments: [Parameter]
-    ) {
-        self.location = location
-        self.type = type
-        self.kind = kind
-        self.arguments = arguments
-    }
-
-    public enum Kind: Codable {
-        case provides
-        case bind
-        case injectable
     }
 }

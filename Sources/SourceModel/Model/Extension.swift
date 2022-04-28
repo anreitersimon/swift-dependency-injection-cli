@@ -1,24 +1,25 @@
 public struct Extension: Equatable, Codable, DeclarationScope {
-    var path: String { extendedType }
+    public let extendedType: String
 
-    let extendedType: String
-    var initializers: [Initializer] = []
-    var variables: [Variable] = []
-    var functions: [Function] = []
-    var types: [TypeDeclaration] = []
+    public var initializers: [Initializer] = []
+    public var variables: [Variable] = []
+    public var functions: [Function] = []
+    public var types: [TypeDeclaration] = []
 
-    init(
-        extendedType: String,
-        initializers: [Initializer] = [],
-        variables: [Variable] = [],
-        functions: [Function] = [],
-        types: [TypeDeclaration] = []
-    ) {
-        self.extendedType = extendedType
-        self.initializers = initializers
-        self.variables = variables
-        self.functions = functions
-        self.types = types
+    public let scope: String
+    public let modifiers: [Modifier]
+    public var generics: Generics = .empty
+    public var inheritedTypes: [TypeSignature] = []
+
+    public enum Modifier: String, Codable, ModifierProtocol {
+        case `public`
+        case `private`
+        case `fileprivate`
+        case `internal`
     }
 
+    var path: String { extendedType }
+
+    public var fullyQualifiedName: String { "\(scope).\(extendedType)" }
+    public var accessLevel: AccessLevel { modifiers.accessLevel }
 }

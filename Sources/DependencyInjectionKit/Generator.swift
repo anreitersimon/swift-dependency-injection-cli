@@ -2,6 +2,13 @@ import CodeGeneration
 import DependencyAnalyzer
 import DependencyModel
 import Foundation
+import SourceModel
+
+class XcodeDiagnostics: Diagnostics {
+    func record(_ diagnostic: Diagnostic) {
+        print(diagnostic.description)
+    }
+}
 
 public struct Generator {
 
@@ -11,44 +18,61 @@ public struct Generator {
         outputFile: URL,
         graphFile: URL
     ) throws {
-        let graph = try DependencyAnalysis.extractDependencyGraph(
-            file: inputFile,
-            moduleName: moduleName
+        // TODO
+        let diagnostics = XcodeDiagnostics()
+
+        let sourceFile = try SourceFile.parse(
+            module: moduleName,
+            file: inputFile
         )
 
-        try FileManager.default.createDirectory(
-            at: outputFile.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        try FileManager.default.createDirectory(
-            at: graphFile.deletingLastPathComponent(),
-            withIntermediateDirectories: true
+        let fileGraph = try DependencyAnalysis.extractGraph(
+            file: sourceFile,
+            diagnostics: diagnostics
         )
 
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
+        let contents = CodeGen.generateSources(
+            fileGraph: fileGraph
+        )
 
-        print("warning: writing graph to \(graphFile.absoluteString)")
-        try graph.write(to: graphFile)
+        try FileManager.default.smartWrite(
+            contents.data(using: .utf8)!,
+            to: outputFile
+        )
+        
+        let encoded = try JSONEncoder().encode(fileGraph)
 
-        print("warning: generating factory methods at \(outputFile.absoluteString)")
-        try CodeGen.generatedFactories(graph: graph).writeToFile(outputFile)
+        try FileManager.default.smartWrite(
+            encoded,
+            to: graphFile
+        )
+
     }
 
     public static func generateModule(
         moduleName: String,
-        mergedGraph: DependencyGraph,
+        mergedGraph: ModuleDependencyGraph,
         outputFile: URL
     ) throws {
+        // TODO
+    }
 
-        try FileManager.default.createDirectory(
-            at: outputFile.deletingLastPathComponent(),
+}
+
+extension FileManager {
+    func smartWrite(
+        _ contents: Data,
+        to url: URL
+    ) throws {
+        if fileExists(atPath: url.path) {
+            try self.removeItem(at: url)
+        }
+        try self.createDirectory(
+            at: url.deletingLastPathComponent(),
             withIntermediateDirectories: true
         )
 
-        try CodeGen
-            .generateModule(moduleName: moduleName, graph: mergedGraph)
-            .writeToFile(outputFile)
-    }
+        try contents.write(to: url, options: .atomic)
 
+    }
 }

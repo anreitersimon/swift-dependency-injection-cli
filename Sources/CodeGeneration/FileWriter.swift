@@ -57,13 +57,20 @@ public class FileWriter {
 
         return self
     }
-    
+
     @discardableResult
     func writeMultiline(_ str: String) -> FileWriter {
         let lines = str.split(whereSeparator: \.isNewline)
-        
+
         for line in lines {
-            writeLine(String(line))
+            var contents = line
+
+            while contents.hasPrefix("\t") {
+                contents = contents.dropFirst()
+                write(singleIndent)
+            }
+
+            writeLine(String(contents))
         }
         return self
     }

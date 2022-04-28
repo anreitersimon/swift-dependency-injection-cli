@@ -3,6 +3,27 @@ import Foundation
 @_implementationOnly import SwiftSyntaxParser
 
 public struct SourceFile: Equatable, Codable, DeclarationScope {
+
+    public init(
+        fileName: String,
+        module: String,
+        imports: [Import] = [],
+        types: [TypeDeclaration] = [],
+        extensions: [Extension] = [],
+        variables: [Variable] = [],
+        functions: [Function] = [],
+        initializers: [Initializer] = []
+    ) {
+        self.fileName = fileName
+        self.module = module
+        self.imports = imports
+        self.types = types
+        self.extensions = extensions
+        self.variables = variables
+        self.functions = functions
+        self.initializers = initializers
+    }
+
     var path: String { module }
 
     public let fileName: String
@@ -18,6 +39,10 @@ public struct SourceFile: Equatable, Codable, DeclarationScope {
         var builder: [TypeDeclaration] = []
 
         collectTypes(into: &builder)
+        
+        for ext in extensions {
+            ext.collectTypes(into: &builder)
+        }
 
         return builder
     }

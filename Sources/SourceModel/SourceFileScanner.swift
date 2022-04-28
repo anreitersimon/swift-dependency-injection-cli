@@ -43,7 +43,6 @@ class SourceFileScanner: SyntaxVisitor {
     }
 
     override func visit(_ node: CodeBlockSyntax) -> SyntaxVisitorContinueKind {
-        print("Skipping CodeBlockSyntax")
         return .skipChildren
     }
 
@@ -66,7 +65,9 @@ class SourceFileScanner: SyntaxVisitor {
                     firstName: parameter.firstName?.text,
                     secondName: parameter.secondName?.text,
                     type: parameter.type.map(TypeSignature.fromTypeSyntax),
-                    attributes: parameter.attributes?.map { $0.trimmed } ?? [],
+                    attributes: parameter.attributes?.map {
+                        $0.trimmed
+                    } ?? [],
                     defaultValue: parameter.defaultArgument?.value.trimmed
                 )
             )
@@ -160,7 +161,16 @@ class SourceFileScanner: SyntaxVisitor {
 
     override func visit(_ node: ExtensionDeclSyntax) -> SyntaxVisitorContinueKind {
         let typeDecl = Extension(
-            extendedType: node.extendedType.withoutTrivia().description
+            extendedType: node.extendedType.trimmed,
+            scope: path,
+            modifiers: .fromModifiers(node.modifiers),
+            generics: Generics.from(
+                parameterClause: nil,
+                whereClause: node.genericWhereClause
+            ),
+            inheritedTypes: node.inheritanceClause?.inheritedTypeCollection
+                .map(\.typeName)
+                .map(TypeSignature.fromTypeSyntax(_:)) ?? []
         )
 
         scopes.append(typeDecl)

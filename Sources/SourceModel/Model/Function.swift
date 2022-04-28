@@ -25,11 +25,38 @@ public struct Function: Equatable, Codable {
     public let modifiers: [Modifier]
     public let trailingModifiers: [TrailingModifier]
 
-    public struct Argument: Equatable, Codable {
-        var firstName: String?
-        var secondName: String?
-        var type: TypeSignature?
-        var attributes: [String] = []
-        var defaultValue: String? = nil
+    public struct Argument: Equatable, Codable, CustomStringConvertible {
+        public var firstName: String?
+        public var secondName: String?
+        public var type: TypeSignature?
+        public var attributes: [String] = []
+        public var defaultValue: String? = nil
+
+        public var description: String {
+            var builder = [
+                firstName, secondName,
+            ]
+            .compactMap { $0 }
+            .joined(separator: " ")
+
+            builder.append(": ")
+            if let type = type {
+                builder.append(type.description)
+            }
+
+            if let defaultValue = defaultValue {
+                builder.append(" = \(defaultValue)")
+            }
+
+            return builder
+        }
+
+        public var callSiteName: String? {
+            if firstName == "_" {
+                return nil
+            } else {
+                return firstName
+            }
+        }
     }
 }

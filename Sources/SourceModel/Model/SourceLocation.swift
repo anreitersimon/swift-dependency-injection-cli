@@ -1,4 +1,4 @@
-public struct SourceLocation: Hashable, Codable, CustomDebugStringConvertible {
+public struct SourceLocation: Hashable, Codable, CustomStringConvertible {
     /// The line in the file where this location resides. 1-based.
     public let line: Int
 
@@ -12,6 +12,11 @@ public struct SourceLocation: Hashable, Codable, CustomDebugStringConvertible {
     public var debugDescription: String {
         // Print file name?
         return "\(line):\(column)"
+    }
+    
+    public var description: String {
+        // Print file name?
+        return "\(file):\(line):\(column)"
     }
 
     public init(line: Int, column: Int, file: String) {

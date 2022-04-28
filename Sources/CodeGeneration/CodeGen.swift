@@ -1,6 +1,7 @@
 import DependencyModel
 import Foundation
 import SourceModel
+import StoreKit
 
 extension String {
 
@@ -10,10 +11,23 @@ extension String {
     }
 }
 
+// TODO: Dont duplicate
+extension Function.Argument {
+
+    public var isInjected: Bool {
+        !Constants.injectAnnotations.intersection(attributes).isEmpty
+    }
+
+    public var isAssisted: Bool {
+        !Constants.assistedAnnotations.intersection(attributes).isEmpty
+    }
+
+}
+
 public enum CodeGen {
 
-    public static func generateFactories(
-        source: SourceFile
+    public static func generateSources(
+        fileGraph graph: FileDependencyGraph
     ) -> String {
 
         let writer = FileWriter()
@@ -21,172 +35,96 @@ public enum CodeGen {
         writer.writeLine("// Automatically generated DO NOT MODIFY")
         writer.endLine()
 
-        for imp in source.imports {
+        for imp in graph.imports {
             writer.writeLine(imp.description)
         }
 
         writer.endLine()
 
-        writer.scope("extension \(source.module)_Module") {
+        writer.scope("extension \(graph.module)_Module") {
             $0.scope(
-                "func register_\(source.fileName.swiftIdentifier())(_ registry: DependencyRegistry)"
+                "func register_\(graph.fileName.swiftIdentifier())(_ registry: DependencyRegistry)"
             ) {
-                $0.writeLine("// register all types in this file")
+                for provided in graph.provides {
+                    $0.writeMultiline(
+                        """
+                        registry.register(\(provided.fullName).self) { resolver in
+                            \(provided.fullName).newInstance(resolver: resolver)
+                        }
+                        """
+                    )
+                }
+            }
+        }
+
+        for provided in graph.provides {
+            writer.scope("extension \(provided.fullName)") {
+                generateTypeFactory(in: $0, injectable: provided)
+
             }
         }
 
         writer.endLine()
 
-        for type in source.recursiveTypes {
-            if type.accessLevel < .fileprivate {
-
-            }
-
-            writer.scope("extension \(type.fullyQualifiedName)") {
-                $0.writeLine(
-                    """
-                    \(type.accessLevel.rawValue) static func register(
-                    """
-                )
-            }
-        }
-
         return writer.builder
     }
 
-    @TextBuilder
-    public static func generatedFactories(
-        graph: DependencyGraph
-    ) -> Writable {
+    private static func generateTypeFactory(
+        in writer: FileWriter,
+        injectable: InjectableType
+    ) {
+        let allArguments = injectable.initializer.arguments
+            .filter { $0.isAssisted || $0.isInjected }
+        let assisted = allArguments.filter(\.isAssisted)
 
-        for importStmt in graph.imports {
-            importStmt
+        writer.writeLine("public static func newInstance(")
+        writer.indent {
+            $0.write("resolver: DependencyResolver = DependencyInjection.resolver")
+
+            for argument in assisted {
+                $0.write(",")
+                $0.endLine()
+                $0.write(argument.description)
+            }
         }
+        writer.endLine()
+        writer.scope(")") {
+            $0.write("\(injectable.fullName)(")
+            $0.indent {
 
-        for provided in graph.provides {
+                var isFirst = true
 
-            let defaultArgs = [
-                Function.Argument(
-                    firstName: "resolver",
-                    secondName: nil,
-                    type: "DependencyResolver",
-                    defaultValue: "DependencyInjection.resolver"
-                )
-            ]
-            let assistedProperties = provided.arguments
-                .filter { $0.isAssisted }
-                .map { $0.toFunctionArgument() }
+                for argument in allArguments where argument.isInjected || argument.isAssisted {
 
-            Extension(name: provided.type.name) {
-                Function(
-                    name: "create",
-                    arguments: defaultArgs + assistedProperties,
-                    returnType: provided.type.name,
-                    modifiers: ["public", "static"],
-                    trailingModifiers: []
-                ) {
+                    if !isFirst {
+                        $0.write(",")
+                    }
+                    $0.endLine()
 
-                    let callArgs = provided.arguments.map { param -> String in
-
-                        let arg: String
-
-                        if param.isAssisted {
-                            arg = param.secondName ?? param.firstName
-                        } else {
-                            arg = "resolver.resolve(\(param.type.name).self)"
-                        }
-                        return
-                            param
-                            .toFunctionArgument()
-                            .callWith(argument: arg)
+                    if let argName = argument.callSiteName {
+                        $0.write(argName)
+                        $0.write(": ")
                     }
 
-                    "return \(provided.type.name)(\(callArgs.joined(separator: ", ")))"
-                }
-            }
-        }
+                    if argument.isInjected {
+                        $0.write("resolver.resolve()")
+                    } else if argument.isAssisted {
+                        let internalName = argument.secondName ?? argument.firstName
 
-        ""
-    }
+                        assert(internalName != nil, "argument must at least have internal name")
 
-    ///
-    /// protocol Module {
-    ///    func register(in registry: DependencyRegistry)
-    ///    func validate(resolver: DependencyResolver) throws
-    /// }
-
-    @TextBuilder
-    public static func generateModule(
-        moduleName: String,
-        graph: DependencyGraph
-    ) -> Writable {
-
-        for importStmt in graph.imports.sorted() {
-            importStmt
-        }
-
-        TypeDeclaration(
-            kind: "struct",
-            name: "\(moduleName)Module: Module",
-            accessLevel: "public"
-        ) {
-            "public init() {}"
-
-            Function(
-                name: "register",
-                arguments: [
-                    Function.Argument(
-                        firstName: "in",
-                        secondName: "registry",
-                        type: "DependencyRegistry"
-                    )
-                ],
-                returnType: nil,
-                modifiers: ["public"],
-                trailingModifiers: []
-            ) {
-
-                for provided in graph.provides
-                where provided.arguments.allSatisfy({ !$0.isAssisted }) {
-                    "registry.register(as: \(provided.type.name).self) { \(provided.type.name).create(resolver: $0) }"
+                        $0.write(internalName!)
+                    }
+                    isFirst = false
                 }
             }
 
-            Function(
-                name: "validate",
-                arguments: [
-                    Function.Argument(
-                        firstName: "resolver",
-                        secondName: nil,
-                        type: "DependencyResolver"
-                    )
-                ],
-                returnType: nil,
-                modifiers: ["public"],
-                trailingModifiers: ["throws"]
-            ) {
-
-                let usedTypes = Dictionary(
-                    grouping: graph.uses.flatMap { $0.arguments },
-                    by: { $0.type.name }
-                )
-
-                for (key, _) in usedTypes {
-                    "print(\"resolving \(key)\")"
-                    "let _ = try resolver._tryResolve(\(key).self)"
-                }
-
+            if !allArguments.isEmpty {
+                $0.endLine()
             }
-        }
-    }
-}
 
-extension DependencyModel.Parameter {
-    func toFunctionArgument() -> Function.Argument {
-        Function.Argument(
-            firstName: firstName,
-            secondName: secondName,
-            type: type.name
-        )
+            $0.write(")")
+        }
+
     }
 }

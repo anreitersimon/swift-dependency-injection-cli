@@ -91,9 +91,21 @@ let package = Package(
             ]
         ),
         .testTarget(
+            name: "DependencyAnalyzerTests",
+            dependencies: [
+                "DependencyAnalyzer",
+                .product(
+                    name: "CustomDump",
+                    package: "swift-custom-dump"
+                ),
+            ]
+        ),
+        .testTarget(
             name: "CodeGenerationTests",
             dependencies: [
                 "CodeGeneration",
+                "DependencyAnalyzer",
+                "SourceModel",
                 .product(
                     name: "CustomDump",
                     package: "swift-custom-dump"

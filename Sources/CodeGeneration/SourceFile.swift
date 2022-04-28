@@ -41,23 +41,6 @@ public func Class(
     TypeDeclaration(kind: "class", name: name, accessLevel: accessLevel, body: body)
 }
 
-public func Class(
-    _ name: String,
-    accessLevel: String? = nil,
-    fields: [Variable],
-    @TextBuilder body: @escaping () -> Writable
-) -> TypeDeclaration {
-    TypeDeclaration(kind: "class", name: name, accessLevel: accessLevel) {
-        for field in fields {
-            field
-            ""
-        }
-        ""
-        Function.memberwiseInitializer(fields: fields)
-        ""
-        body()
-    }
-}
 
 public struct Variable: Writable {
     public let mutable: Bool
