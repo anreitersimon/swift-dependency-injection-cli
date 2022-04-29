@@ -72,6 +72,10 @@ public enum CodeGen {
         for imp in graph.imports {
             writer.writeLine(imp.description)
         }
+        
+        if !graph.imports.contains(where: { $0.path == "DependencyInjection" }) {
+            writer.write("import DependencyInjection")
+        }
 
         writer.endLine()
 

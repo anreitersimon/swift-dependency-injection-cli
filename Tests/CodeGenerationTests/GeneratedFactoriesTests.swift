@@ -22,7 +22,6 @@ class GeneratedFactoriesTests: XCTestCase {
             module: "Mock",
             fileName: "MockFile",
             source: """
-                import DependencyInjection
                 import TestModule
 
                 struct ExplicitelyInitialized: Injectable {
