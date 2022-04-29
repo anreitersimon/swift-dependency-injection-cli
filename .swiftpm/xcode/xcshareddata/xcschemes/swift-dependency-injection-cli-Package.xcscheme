@@ -104,6 +104,20 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "swift-dependency-injection-cli"
+               BuildableName = "swift-dependency-injection-cli"
+               BlueprintName = "swift-dependency-injection-cli"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -164,6 +178,16 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "swift-dependency-injection-cli"
+            BuildableName = "swift-dependency-injection-cli"
+            BlueprintName = "swift-dependency-injection-cli"
+            ReferencedContainer = "container:">
+         </BuildableReference>
+      </BuildableProductRunnable>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
@@ -180,15 +204,16 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <MacroExpansion>
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "swift-dependency-injection"
-            BuildableName = "swift-dependency-injection"
-            BlueprintName = "swift-dependency-injection"
+            BlueprintIdentifier = "swift-dependency-injection-cli"
+            BuildableName = "swift-dependency-injection-cli"
+            BlueprintName = "swift-dependency-injection-cli"
             ReferencedContainer = "container:">
          </BuildableReference>
-      </MacroExpansion>
+      </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

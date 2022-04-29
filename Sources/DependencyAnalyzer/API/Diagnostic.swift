@@ -1,19 +1,22 @@
 import SourceModel
 
 public struct Diagnostic: CustomStringConvertible {
-    enum Level: String {
+    public enum Level: String {
         case warning
         case error
         case note
         case remark
     }
 
-    let message: String
-    let level: Level
-    let location: SourceLocation?
+    public let message: String
+    public let level: Level
+    public let location: SourceLocation?
 
     public var description: String {
-        let prefix = location.map { "\($0.description): " } ?? ""
+        var prefix = location.map { "\($0.description): " } ?? ""
+        if prefix.hasPrefix("file://") {
+            prefix.removeFirst("file://".count)
+        }
 
         return "\(prefix)\(level.rawValue): \(message)"
     }
@@ -22,6 +25,8 @@ public struct Diagnostic: CustomStringConvertible {
 
 public protocol Diagnostics {
     func record(_ diagnostic: Diagnostic)
+    
+    var hasErrors: Bool { get }
 }
 
 extension Diagnostics {

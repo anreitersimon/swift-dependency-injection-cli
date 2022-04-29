@@ -13,6 +13,15 @@ public struct TypeDeclaration: Codable, Equatable, DeclarationScope {
     public var variables: [Variable] = []
     public var functions: [Function] = []
     public var types: [TypeDeclaration] = []
+    public let sourceRange: SourceRange?
+
+    public var allAvailableInitializers: [Initializer] {
+        if let i = implicitMemberwiseInitializer {
+            return [i]
+        } else {
+            return self.initializers
+        }
+    }
 
     public var implicitMemberwiseInitializer: Initializer? {
         guard self.kind == .struct && self.initializers.isEmpty else {
@@ -28,9 +37,11 @@ public struct TypeDeclaration: Codable, Equatable, DeclarationScope {
                     secondName: nil,
                     type: $0.type,
                     attributes: $0.attributes,
-                    defaultValue: $0.defaultValue
+                    defaultValue: $0.defaultValue,
+                    sourceRange: $0.sourceRange
                 )
-            }
+            },
+            sourceRange: self.sourceRange
         )
     }
 

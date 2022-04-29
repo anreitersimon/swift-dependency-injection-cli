@@ -5,12 +5,17 @@ public struct FileDependencyGraph: Codable {
     public let fileName: String
     public let module: String
     public var imports: [Import] = []
-    public var provides: [InjectableType] = []
+    public var provides: [ProvidedType] = []
     public var uses: [Injection] = []
 
-    public mutating func register(_ type: TypeDeclaration, initializer: Initializer) {
+    public mutating func register(
+        _ type: TypeDeclaration,
+        kind: InjectableProtocol,
+        initializer: Initializer
+    ) {
         self.provides.append(
-            InjectableType(
+            ProvidedType(
+                kind: kind,
                 name: type.name,
                 fullName: type.fullyQualifiedName,
                 initializer: initializer
@@ -25,7 +30,7 @@ public struct FileDependencyGraph: Codable {
         fileName: String,
         module: String,
         imports: [Import] = [],
-        provides: [InjectableType] = [],
+        provides: [ProvidedType] = [],
         uses: [Injection] = []
     ) {
         self.fileName = fileName
@@ -54,7 +59,8 @@ public struct ModuleDependencyGraph: Codable {
 
 public struct TopLevelDependencyGraph: Codable {}
 
-public struct InjectableType: Codable {
+public struct ProvidedType: Codable {
+    public let kind: InjectableProtocol
     public let name: String
     public let fullName: String
     public let initializer: Initializer

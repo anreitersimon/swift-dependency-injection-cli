@@ -24,5 +24,6 @@ public struct Variable: Equatable, Codable {
     public var modifiers: [Modifier] = []
     public var defaultValue: String? = nil
     public var isStored: Bool = true
+    public var sourceRange: SourceRange? = nil
 
 }

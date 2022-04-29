@@ -39,7 +39,7 @@ public struct SourceFile: Equatable, Codable, DeclarationScope {
         var builder: [TypeDeclaration] = []
 
         collectTypes(into: &builder)
-        
+
         for ext in extensions {
             ext.collectTypes(into: &builder)
         }
@@ -66,17 +66,19 @@ extension SourceFile {
 
     public static func parse(
         module: String,
-        file: URL
+        file: URL,
+        includeSourceLocations: Bool = true
     ) throws -> SourceFile {
         let syntax = try SyntaxParser.parse(file)
         let context = Context(
             moduleName: module,
             fileName: file.deletingPathExtension().lastPathComponent,
             syntax: syntax,
-            converter: SourceLocationConverter(
-                file: file.absoluteString,
-                tree: syntax
-            )
+            converter: includeSourceLocations
+                ? SourceLocationConverter(
+                    file: file.absoluteString,
+                    tree: syntax
+                ) : nil
         )
 
         let scanner = SourceFileScanner(context: context)
@@ -88,17 +90,18 @@ extension SourceFile {
     public static func parse(
         module: String,
         fileName: String = "<in-memory>",
-        source: String
+        source: String,
+        includeSourceLocations: Bool = false
     ) throws -> SourceFile {
         let syntax = try SyntaxParser.parse(source: source)
         let context = Context(
             moduleName: module,
             fileName: fileName,
             syntax: syntax,
-            converter: SourceLocationConverter(
+            converter: includeSourceLocations ? SourceLocationConverter(
                 file: fileName,
                 source: source
-            )
+            ) : nil
         )
 
         let scanner = SourceFileScanner(context: context)

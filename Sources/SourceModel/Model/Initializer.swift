@@ -16,4 +16,5 @@ public struct Initializer: Equatable, Codable {
     public var generics: Generics = .empty
 
     public var arguments: [Function.Argument] = []
+    public var sourceRange: SourceRange? = nil
 }

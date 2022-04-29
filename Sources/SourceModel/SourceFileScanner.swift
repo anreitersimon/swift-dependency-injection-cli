@@ -56,7 +56,8 @@ class SourceFileScanner: SyntaxVisitor {
             generics: Generics.from(
                 parameterClause: node.genericParameterClause,
                 whereClause: node.genericWhereClause
-            )
+            ),
+            sourceRange: node.sourceRange(context: context)
         )
 
         for parameter in node.parameters.parameterList {
@@ -68,7 +69,8 @@ class SourceFileScanner: SyntaxVisitor {
                     attributes: parameter.attributes?.map {
                         $0.trimmed
                     } ?? [],
-                    defaultValue: parameter.defaultArgument?.value.trimmed
+                    defaultValue: parameter.defaultArgument?.value.trimmed,
+                    sourceRange: parameter.sourceRange(context: context)
                 )
             )
         }
@@ -92,7 +94,8 @@ class SourceFileScanner: SyntaxVisitor {
             ),
             inheritedTypes: node.inheritanceClause?.inheritedTypeCollection
                 .map(\.typeName)
-                .map(TypeSignature.fromTypeSyntax(_:)) ?? []
+                .map(TypeSignature.fromTypeSyntax(_:)) ?? [],
+            sourceRange: node.sourceRange(context: context)
         )
 
         scopes.append(typeDecl)
@@ -119,7 +122,8 @@ class SourceFileScanner: SyntaxVisitor {
             ),
             inheritedTypes: node.inheritanceClause?.inheritedTypeCollection
                 .map(\.typeName)
-                .map(TypeSignature.fromTypeSyntax(_:)) ?? []
+                .map(TypeSignature.fromTypeSyntax(_:)) ?? [],
+            sourceRange: node.sourceRange(context: context)
         )
 
         scopes.append(typeDecl)
@@ -146,7 +150,8 @@ class SourceFileScanner: SyntaxVisitor {
             ),
             inheritedTypes: node.inheritanceClause?.inheritedTypeCollection
                 .map(\.typeName)
-                .map(TypeSignature.fromTypeSyntax(_:)) ?? []
+                .map(TypeSignature.fromTypeSyntax(_:)) ?? [],
+            sourceRange: node.sourceRange(context: context)
         )
 
         scopes.append(typeDecl)
@@ -170,7 +175,8 @@ class SourceFileScanner: SyntaxVisitor {
             ),
             inheritedTypes: node.inheritanceClause?.inheritedTypeCollection
                 .map(\.typeName)
-                .map(TypeSignature.fromTypeSyntax(_:)) ?? []
+                .map(TypeSignature.fromTypeSyntax(_:)) ?? [],
+            sourceRange: node.sourceRange(context: context)
         )
 
         scopes.append(typeDecl)
@@ -212,7 +218,8 @@ class SourceFileScanner: SyntaxVisitor {
                 } ?? [],
                 modifiers: .fromModifiers(node.modifiers),
                 defaultValue: binding.initializer?.value.trimmed,
-                isStored: isStored
+                isStored: isStored,
+                sourceRange: node.sourceRange(context: context)
             )
         )
         return .skipChildren

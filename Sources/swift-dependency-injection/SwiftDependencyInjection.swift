@@ -25,12 +25,19 @@ struct Extract: ParsableCommand {
     var graphFile: String
 
     mutating func run() throws {
+        let diagnostics = XcodeDiagnostics()
+        
         try Generator.generateFactories(
             moduleName: moduleName,
             inputFile: URL(fileURLWithPath: inputFile),
             outputFile: URL(fileURLWithPath: outputFile),
-            graphFile: URL(fileURLWithPath: graphFile)
+            graphFile: URL(fileURLWithPath: graphFile),
+            diagnostics: diagnostics
         )
+        
+        if diagnostics.hasErrors {
+            throw ExitCode(1)
+        }
     }
 }
 
@@ -52,9 +59,6 @@ struct Merge: ParsableCommand {
         encoder.outputFormatting = .prettyPrinted
 
         try inputFiles.forEach { path in
-
-            print("w: Merging \(path)")
-
             let data = try Data(contentsOf: URL(fileURLWithPath: path))
             let decoded = try decoder.decode(FileDependencyGraph.self, from: data)
 
@@ -62,8 +66,7 @@ struct Merge: ParsableCommand {
         }
 
         try Generator.generateModule(
-            moduleName: moduleName,
-            mergedGraph: graph,
+            moduleGraph: graph,
             outputFile: URL(fileURLWithPath: outputFile)
         )
 

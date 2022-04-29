@@ -4,7 +4,7 @@ struct Context {
     let moduleName: String
     let fileName: String
     let syntax: SourceFileSyntax
-    let converter: SourceLocationConverter
+    let converter: SourceLocationConverter?
 }
 
 extension SourceModel.SourceLocation {
@@ -18,8 +18,11 @@ extension SourceModel.SourceLocation {
 }
 extension SyntaxProtocol {
 
-    func sourceRange(context: Context) -> SourceModel.SourceRange {
-        let range = self.sourceRange(converter: context.converter)
+    func sourceRange(context: Context) -> SourceModel.SourceRange? {
+        guard let converter = context.converter else {
+            return nil
+        }
+        let range = self.sourceRange(converter: converter)
 
         return SourceModel.SourceRange(
             start: .init(swiftSyntaxLocation: range.start),
@@ -27,7 +30,4 @@ extension SyntaxProtocol {
         )
     }
 
-    func startLocation(context: Context) -> SourceModel.SourceLocation {
-        return .init(swiftSyntaxLocation: startLocation(converter: context.converter))
-    }
 }

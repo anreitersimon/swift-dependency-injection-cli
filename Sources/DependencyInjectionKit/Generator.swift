@@ -4,8 +4,15 @@ import DependencyModel
 import Foundation
 import SourceModel
 
-class XcodeDiagnostics: Diagnostics {
-    func record(_ diagnostic: Diagnostic) {
+public class XcodeDiagnostics: Diagnostics {
+    public init() {}
+    
+    public var hasErrors: Bool = false
+
+    public func record(_ diagnostic: Diagnostic) {
+        if diagnostic.level == .error {
+            hasErrors = true
+        }
         print(diagnostic.description)
     }
 }
@@ -16,11 +23,10 @@ public struct Generator {
         moduleName: String,
         inputFile: URL,
         outputFile: URL,
-        graphFile: URL
+        graphFile: URL,
+        diagnostics: Diagnostics
     ) throws {
         // TODO
-        let diagnostics = XcodeDiagnostics()
-
         let sourceFile = try SourceFile.parse(
             module: moduleName,
             file: inputFile
@@ -39,7 +45,7 @@ public struct Generator {
             contents.data(using: .utf8)!,
             to: outputFile
         )
-        
+
         let encoded = try JSONEncoder().encode(fileGraph)
 
         try FileManager.default.smartWrite(
@@ -50,11 +56,16 @@ public struct Generator {
     }
 
     public static func generateModule(
-        moduleName: String,
-        mergedGraph: ModuleDependencyGraph,
+        moduleGraph: ModuleDependencyGraph,
         outputFile: URL
     ) throws {
-        // TODO
+
+        let contents = CodeGen.generateSources(moduleGraph: moduleGraph)
+        try FileManager.default.smartWrite(
+            contents.data(using: .utf8)!,
+            to: outputFile
+        )
+
     }
 
 }

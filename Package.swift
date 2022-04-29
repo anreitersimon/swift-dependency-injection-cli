@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "swift-dependency-injection-cli",
+    name: "swift-dependency-injection",
     products: [
         .executable(
             name: "swift-dependency-injection",

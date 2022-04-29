@@ -1,7 +1,7 @@
 import Foundation
 
 public class FileWriter {
-    var singleIndent = "  "
+    var singleIndent = "    "
     var currentIndent = ""
 
     var builder = ""

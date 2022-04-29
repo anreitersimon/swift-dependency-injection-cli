@@ -8,6 +8,7 @@ class AnalizerTests: XCTestCase {
 
     class DiagnosticsCollector: Diagnostics {
         var diagnostics: [Diagnostic] = []
+        var hasErrors: Bool = false
 
         func record(_ diagnostic: Diagnostic) {
             diagnostics.append(diagnostic)

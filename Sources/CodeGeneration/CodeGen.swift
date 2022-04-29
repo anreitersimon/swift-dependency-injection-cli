@@ -21,10 +21,44 @@ extension Function.Argument {
     public var isAssisted: Bool {
         !Constants.assistedAnnotations.intersection(attributes).isEmpty
     }
+}
 
+extension Initializer {
+    public var isAssisted: Bool {
+        return arguments.contains(where: \.isAssisted)
+    }
 }
 
 public enum CodeGen {
+
+    static let header = "// Automatically generated DO NOT MODIFY"
+
+    public static func generateSources(
+        moduleGraph graph: ModuleDependencyGraph
+    ) -> String {
+
+        let writer = FileWriter()
+
+        writer.writeMultiline(
+            """
+            \(header)
+
+            import DependencyInjection
+
+            """
+        )
+
+        writer.scope("public enum \(graph.module)_Module: DependencyInjection.DependencyModule") {
+            $0.scope("public static func register(in registry: DependencyRegistry)") {
+                for file in graph.files {
+                    $0.writeLine("register_\(file.fileName.swiftIdentifier())(in: registry)")
+                }
+            }
+
+        }
+
+        return writer.builder
+    }
 
     public static func generateSources(
         fileGraph graph: FileDependencyGraph
@@ -32,7 +66,7 @@ public enum CodeGen {
 
         let writer = FileWriter()
 
-        writer.writeLine("// Automatically generated DO NOT MODIFY")
+        writer.writeLine(header)
         writer.endLine()
 
         for imp in graph.imports {
@@ -43,24 +77,19 @@ public enum CodeGen {
 
         writer.scope("extension \(graph.module)_Module") {
             $0.scope(
-                "func register_\(graph.fileName.swiftIdentifier())(_ registry: DependencyRegistry)"
+                "static func register_\(graph.fileName.swiftIdentifier())(in registry: DependencyRegistry)"
             ) {
-                for provided in graph.provides {
-                    $0.writeMultiline(
-                        """
-                        registry.register(\(provided.fullName).self) { resolver in
-                            \(provided.fullName).newInstance(resolver: resolver)
-                        }
-                        """
-                    )
+                for provided in graph.provides
+                where !provided.initializer.arguments.contains(where: \.isAssisted) {
+                    $0.writeLine("\(provided.fullName).register(in: registry)")
                 }
             }
         }
 
         for provided in graph.provides {
             writer.scope("extension \(provided.fullName)") {
+                generateRegistration(in: $0, injectable: provided)
                 generateTypeFactory(in: $0, injectable: provided)
-
             }
         }
 
@@ -69,9 +98,53 @@ public enum CodeGen {
         return writer.builder
     }
 
+    private static func generateRegistration(
+        in writer: FileWriter,
+        injectable: ProvidedType
+    ) {
+        writer.scope("fileprivate static func register(in registry: DependencyRegistry)") {
+            generateRequirementsVariable(in: $0, injectable: injectable)
+
+            switch injectable.kind {
+            case .factory where injectable.initializer.isAssisted:
+                $0.writeMultiline(
+                    """
+                    registry.registerAssistedFactory(
+                        ofType: \(injectable.fullName).self,
+                        requirements: requirements
+                    )
+                    """
+                )
+            case .factory, .singleton, .weakSingleton:
+                let methodName: String
+                
+                switch injectable.kind {
+                case .factory:
+                    methodName = "registerFactory"
+                case .singleton:
+                    methodName = "registerSingleton"
+                case .weakSingleton:
+                    methodName = "registerWeakSingleton"
+                }
+                
+                $0.writeMultiline(
+                    """
+                    registry.\(methodName)(
+                        ofType: \(injectable.fullName).self,
+                        requirements: requirements
+                    ) { resolver in
+                        \(injectable.fullName).newInstance(resolver: resolver)
+                    }
+                    """
+                )
+            }
+
+        }
+    }
+
     private static func generateTypeFactory(
         in writer: FileWriter,
-        injectable: InjectableType
+        injectable: ProvidedType
     ) {
         let allArguments = injectable.initializer.arguments
             .filter { $0.isAssisted || $0.isInjected }
@@ -79,7 +152,7 @@ public enum CodeGen {
 
         writer.writeLine("public static func newInstance(")
         writer.indent {
-            $0.write("resolver: DependencyResolver = DependencyInjection.resolver")
+            $0.write("resolver: DependencyResolver = Dependencies.sharedResolver")
 
             for argument in assisted {
                 $0.write(",")
@@ -88,7 +161,7 @@ public enum CodeGen {
             }
         }
         writer.endLine()
-        writer.scope(")") {
+        writer.scope(") -> \(injectable.fullName)") {
             $0.write("\(injectable.fullName)(")
             $0.indent {
 
@@ -126,5 +199,32 @@ public enum CodeGen {
             $0.write(")")
         }
 
+    }
+
+    private static func generateRequirementsVariable(
+        in writer: FileWriter,
+        injectable: ProvidedType
+    ) {
+        let injected = injectable.initializer.arguments.filter(\.isInjected)
+
+        writer.write("let requirements: [String: Any.Type] = [")
+
+        guard !injected.isEmpty else {
+            writer.write(":]")
+            writer.endLine()
+            writer.endLine()
+            return
+        }
+        writer.endLine()
+
+        writer.indent {
+            for field in injected {
+                if let metaType = field.type?.asMetatype() {
+                    $0.writeLine("\"\(field.firstName ?? field.secondName ?? "-")\": \(metaType),")
+                }
+            }
+        }
+        writer.writeLine("]")
+        writer.endLine()
     }
 }

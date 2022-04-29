@@ -24,6 +24,7 @@ public struct Function: Equatable, Codable {
     public let arguments: [Argument]
     public let modifiers: [Modifier]
     public let trailingModifiers: [TrailingModifier]
+    public var sourceRange: SourceRange? = nil
 
     public struct Argument: Equatable, Codable, CustomStringConvertible {
         public var firstName: String?
@@ -31,6 +32,7 @@ public struct Function: Equatable, Codable {
         public var type: TypeSignature?
         public var attributes: [String] = []
         public var defaultValue: String? = nil
+        public var sourceRange: SourceRange? = nil
 
         public var description: String {
             var builder = [

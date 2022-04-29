@@ -10,6 +10,7 @@ public struct Extension: Equatable, Codable, DeclarationScope {
     public let modifiers: [Modifier]
     public var generics: Generics = .empty
     public var inheritedTypes: [TypeSignature] = []
+    public let sourceRange: SourceRange?
 
     public enum Modifier: String, Codable, ModifierProtocol {
         case `public`
