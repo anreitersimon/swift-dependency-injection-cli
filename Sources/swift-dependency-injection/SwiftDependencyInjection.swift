@@ -22,19 +22,19 @@ struct Extract: ParsableCommand {
     var outputFile: String
 
     @Option
-    var graphFile: String
+    var graphFile: String?
 
     mutating func run() throws {
         let diagnostics = XcodeDiagnostics()
-        
+
         try Generator.generateFactories(
             moduleName: moduleName,
             inputFile: URL(fileURLWithPath: inputFile),
             outputFile: URL(fileURLWithPath: outputFile),
-            graphFile: URL(fileURLWithPath: graphFile),
+            graphFile: graphFile.map { URL(fileURLWithPath: $0) },
             diagnostics: diagnostics
         )
-        
+
         if diagnostics.hasErrors {
             throw ExitCode(1)
         }
@@ -54,15 +54,15 @@ struct Merge: ParsableCommand {
 
     mutating func run() throws {
         var graph = ModuleDependencyGraph(module: moduleName)
-        let decoder = JSONDecoder()
+        // let decoder = JSONDecoder()
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
 
-        try inputFiles.forEach { path in
-            let data = try Data(contentsOf: URL(fileURLWithPath: path))
-            let decoded = try decoder.decode(FileDependencyGraph.self, from: data)
+        inputFiles.forEach { path in
+            //            let data = try Data(contentsOf: )
+            //            let decoded = try decoder.decode(FileDependencyGraph.self, from: data)
 
-            graph.files.append(decoded)
+            graph.files.append(URL(fileURLWithPath: path))
         }
 
         try Generator.generateModule(

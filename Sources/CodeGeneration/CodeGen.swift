@@ -51,7 +51,8 @@ public enum CodeGen {
         writer.scope("public enum \(graph.module)_Module: DependencyInjection.DependencyModule") {
             $0.scope("public static func register(in registry: DependencyRegistry)") {
                 for file in graph.files {
-                    $0.writeLine("register_\(file.fileName.swiftIdentifier())(in: registry)")
+                    let fileName = file.deletingPathExtension().lastPathComponent.swiftIdentifier()
+                    $0.writeLine("register_\(fileName)(in: registry)")
                 }
             }
 
@@ -72,7 +73,7 @@ public enum CodeGen {
         for imp in graph.imports {
             writer.writeLine(imp.description)
         }
-        
+
         if !graph.imports.contains(where: { $0.path == "DependencyInjection" }) {
             writer.write("import DependencyInjection")
         }
@@ -121,7 +122,7 @@ public enum CodeGen {
                 )
             case .factory, .singleton, .weakSingleton:
                 let methodName: String
-                
+
                 switch injectable.kind {
                 case .factory:
                     methodName = "registerFactory"
@@ -130,7 +131,7 @@ public enum CodeGen {
                 case .weakSingleton:
                     methodName = "registerWeakSingleton"
                 }
-                
+
                 $0.writeMultiline(
                     """
                     registry.\(methodName)(

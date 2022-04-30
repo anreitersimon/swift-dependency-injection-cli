@@ -6,7 +6,7 @@ import SourceModel
 
 public class XcodeDiagnostics: Diagnostics {
     public init() {}
-    
+
     public var hasErrors: Bool = false
 
     public func record(_ diagnostic: Diagnostic) {
@@ -23,7 +23,7 @@ public struct Generator {
         moduleName: String,
         inputFile: URL,
         outputFile: URL,
-        graphFile: URL,
+        graphFile: URL?,
         diagnostics: Diagnostics
     ) throws {
         // TODO
@@ -46,12 +46,14 @@ public struct Generator {
             to: outputFile
         )
 
-        let encoded = try JSONEncoder().encode(fileGraph)
+        if let graphFile = graphFile {
+            let encoded = try JSONEncoder().encode(fileGraph)
 
-        try FileManager.default.smartWrite(
-            encoded,
-            to: graphFile
-        )
+            try FileManager.default.smartWrite(
+                encoded,
+                to: graphFile
+            )
+        }
 
     }
 

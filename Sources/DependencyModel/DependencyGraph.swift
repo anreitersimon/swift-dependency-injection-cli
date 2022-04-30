@@ -45,11 +45,11 @@ public struct FileDependencyGraph: Codable {
 public struct ModuleDependencyGraph: Codable {
 
     public let module: String
-    public var files: [FileDependencyGraph]
+    public var files: [URL]
 
     public init(
         module: String,
-        files: [FileDependencyGraph] = []
+        files: [URL] = []
     ) {
         self.module = module
         self.files = files
